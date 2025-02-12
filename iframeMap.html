@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+    <html>
+        <head>
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+            crossorigin=""/>
+        </head>
+
+        <body>
+            <!--------------- Make sure you put this AFTER Leaflet's CSS ----------------->
+            <script 
+            src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+            <div id="map" style="height:95vh;" ></div>
+
+            <input type="button" value="Konumum" onClick="goToCurrentLocation()">
+        </body>
+
+        <script>
+            var map = L.map('map',{
+            preferCanvas : true
+            });
+            map.setView([-8.506806445295375, 115.26260597032396],13);
+            
+            let openStreetView = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.mertarsoztravel.com/hizmet-şartları-ve-koşulları">Mert Arsoz Travel</a>'
+            });
+
+            let googleStreetsView = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{
+                    maxZoom: 20,
+                    subdomains:['mt0','mt1','mt2','mt3'],
+                    attribution: '&copy; <a href="https://www.mertarsoztravel.com/hizmet-şartları-ve-koşulları">Mert Arsoz Travel</a>'
+            });
+
+            let googleHybridView = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+                    maxZoom: 20,
+                    subdomains:['mt0','mt1','mt2','mt3'],
+                    attribution: '&copy; <a href="https://www.mertarsoztravel.com/hizmet-şartları-ve-koşulları">Mert Arsoz Travel</a>'
+            });
+
+            let googleSatView = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+                    maxZoom: 20,
+                    subdomains:['mt0','mt1','mt2','mt3'],
+                    attribution: '&copy; <a href="https://www.mertarsoztravel.com/hizmet-şartları-ve-koşulları">Mert Arsoz Travel</a>'
+            });
+
+            let googleTerrainView = L.tileLayer('http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',{
+                    maxZoom: 20,
+                    subdomains:['mt0','mt1','mt2','mt3'],
+                    attribution: '&copy; <a href="https://www.mertarsoztravel.com/hizmet-şartları-ve-koşulları">Mert Arsoz Travel</a>'
+            });
+
+            googleStreetsView.addTo(map);
+            map.attributionControl.setPrefix(''); // Don't show the 'Powered by Leaflet' text.
+            
+            L.marker([-8.506806445295375, 115.26260597032396],{ draggable: true}).addTo(map);
+
+            //--------------------- Marer Array ------------------------
+
+            var markers = [
+                [ -0.1244324, 51.5006728, "Big Ben" ],
+                [ -0.119623, 51.503308, "London Eye" ],
+                [ -0.1279688, 51.5077286, "Nelson's Column<br><a href=\"https://en.wikipedia.org/wiki/Nelson's_Column\">Wiki Pedia</a>" ] 
+            ];
+            
+            //Loop through the markers array
+            for (var i=0; i<markers.length; i++) {
+            
+                var lon = markers[i][0];
+                var lat = markers[i][1];
+                var popupText = markers[i][2];
+                
+                var markerLocation = new L.LatLng(lat, lon);
+                var marker2 = new L.Marker(markerLocation);
+                map.addLayer(marker2);
+            
+                marker2.bindPopup(popupText);
+            
+            }
+
+            //------------------------ Icon Image ---------------------------
+
+            var purpleLocationIcon = L.icon({
+                    iconUrl: 'https://static.wixstatic.com/media/646674_885a0e85cf734378a76e07bd1c890965~mv2.gif',
+                    //shadowUrl: 'leaf-shadow.png',
+
+                    iconSize:     [38, 38], // size of the icon
+                    //shadowSize:   [50, 64], // size of the shadow
+                    iconAnchor:   [38/2, 30], // point of the icon which will correspond to marker's location
+                    //shadowAnchor: [4, 62],  // the same for the shadow
+                    popupAnchor:  [0, 10] // point from which the popup should open relative to the iconAnchor
+                });
+
+
+            // -------------------- User Live Location ------------------
+
+            var options = {
+                enableHighAccuracy: true, // Yüksek hassasiyetli konum bilgisi
+                timeout: 15000,           // Maksimum bekleme süresi (ms)
+                maximumAge: 0             // Önbelleğe alınmış konum bilgisinin yaşı (ms)
+            };
+
+                navigator.geolocation.watchPosition(success, error, options);
+                let marker, circle, zoomed, accuracy, latitude, longitude;
+                function success (pos){
+                    latitude = pos.coords.latitude;
+                    longitude = pos.coords.longitude;
+                    accuracy = pos.coords.accuracy;
+                    if (marker){
+                        map.removeLayer(marker);
+                        map.removeLayer(circle);
+                    }
+                    marker = L.marker([latitude, longitude],{icon: purpleLocationIcon}).addTo(map).bindPopup("Konumum 📍");
+                    circle = L.circle([latitude, longitude], {radius : accuracy}).addTo(map);
+                    if (!zoomed) {
+                        zoomed =  map.fitBounds(circle.getBounds());
+                    }
+                    map.flyTo([latitude, longitude]);
+                }
+
+                function error (err){
+                if (err.code === 1){
+                    alert("Lütfen konum servislerine izin verin!");
+                } else {
+                    alert("Konumunuz alınamıyor!");
+                }
+                }
+/*
+                //--------------------- Get Current Location -----------------
+
+                window.onmessage = function (event) {
+                    if (event.data.click === true) {
+                        window.parent.postMessage(map.getCenter(), "*");
+                        goToCurrentLocation();
+                    } else if (event.data.lat && event.data.long && event.data.accur) {
+                        latitude = event.data.lat;
+                        longitude = event.data.long;
+                        accuracy = event.data.accur;
+                        this.success();
+                        window.parent.postMessage("Konum verisi steden alındı " + latitude + "-" + longitude + "-" + accuracy, "*");
+                    }
+                }
+*/
+                function goToCurrentLocation () {
+                map.stopLocate();
+                navigator.geolocation.watchPosition(success, error);
+                map.flyTo([latitude, longitude]);
+
+                }
+
+                //------------------------ Directions ---------------------------
+                /*
+                var request = new XMLHttpRequest();
+
+                request.open('GET', 'https://api.openrouteservice.org/v2/directions/driving-car?api_key=5b3ce3597851110001cf6248fb984afd5423411c95f9a4c88c22d802&start=8.681495,49.41461&end=8.687872,49.420318');
+
+                request.setRequestHeader('Accept', 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8');
+
+                request.onreadystatechange = function () {
+                if (this.readyState === 4) {
+                    console.log('Status:', this.status);
+                    console.log('Headers:', this.getAllResponseHeaders());
+                    console.log('Body:', this.responseText);
+                }
+                };
+
+                request.send();
+                */
+                //var deneme = map.locate("watch");
+                //console.log("Güncel Konumum :", deneme);
+                //L.marker([],{ draggable: true}).addTo(map);
+    
+        </script>
+    </html>
